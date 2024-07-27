@@ -1,0 +1,73 @@
+services:
+  front-prod:
+    image: registry.alt-tools.tech/aquildev/projet-ecole/front:devops
+    ports:
+      - 4578:80
+    networks:
+      - internet
+      
+  nestjs:
+    image: registry.alt-tools.tech/aquildev/projet-ecole/back:devops
+    container_name: nestjs
+    environment:
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_TOKEN: ${JWT_REFRESH_TOKEN}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LOCALHOST_URL: ${LOCALHOST_URL}
+      IPV4_URL: ${IPV4_URL}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mariadb
+      - redis
+    networks:
+      - redis_network
+      - db_network
+      - internet
+
+  mariadb:
+    image: mariadb:11.2
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./mariadb_data:/var/lib/mysql
+    networks:
+      - db_network
+
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      APACHE_SERVER_NAME: localhost
+      PMA_HOST: ${PMA_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "8080:80"
+    depends_on:
+      - mariadb
+    networks:
+      - db_network
+      - internet
+
+  redis:
+    image: redis:7.2-alpine
+    networks:
+      - redis_network
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
+
+networks:
+  redis_network: 
+  internet:
+  db_network:
